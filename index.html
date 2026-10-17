@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile App Usage Inspector | ตรวจสอบประวัติการเปิดแอปมือถือ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand-wrapper">
+        <div class="logo-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+            <polyline points="9 9 12 6 15 9"></polyline>
+            <polyline points="9 15 12 12 15 15"></polyline>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <h1>Mobile App History Inspector</h1>
+          <p>ระบบวิเคราะห์และตรวจสอบประวัติการเปิดใช้งานแอปพลิเคชันบนมือถือ</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-outline" onclick="loadSampleData()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          โหลดข้อมูลตัวอย่าง
+        </button>
+        <button class="btn btn-danger" onclick="triggerCheatTest()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          ทดสอบตรวจพบ ph4nt0m.lol
+        </button>
+        <button class="btn btn-outline" onclick="exportData('csv')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          ส่งออก CSV
+        </button>
+        <button class="btn btn-primary" onclick="window.print()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 6 2 18 2 18 9"/>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            <rect x="6" y="14" width="12" height="8"/>
+          </svg>
+          พิมพ์รายงาน
+        </button>
+      </div>
+    </header>
+
+    <!-- Threat / Cheat Detection Alert Banner -->
+    <div id="threat-banner" class="threat-alert-banner">
+      <div class="threat-left">
+        <div class="threat-icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div>
+          <div class="threat-title">
+            🚨 ตรวจพบเว็บไซต์และหลักฐานโปรแกรมช่วยเล่นในเครื่อง!
+            <span class="threat-badge">High Alert</span>
+          </div>
+          <div class="threat-desc">
+            ตรวจพบการเข้าถึงเว็บไซต์ต้องสงสัย: <span class="threat-url-tag" id="threat-url-text">https://ph4nt0m.lol/</span> &bull; แจ้งเตือน: มีการเปิดใช้งานโปรแกรมช่วยเล่น / Mod Menu ในเครื่อง
+          </div>
+        </div>
+      </div>
+      <div class="threat-actions">
+        <button class="btn btn-threat" onclick="viewThreatDetails()">
+          ดูหลักฐานในไทม์ไลน์
+        </button>
+        <button class="btn btn-outline" style="color:#fff;" onclick="dismissThreatAlert()">
+          ปิดการเตือน
+        </button>
+      </div>
+    </div>
+
+    <!-- Key Metrics / Stats -->
+    <section class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));">
+      <div class="stat-card">
+        <div class="stat-icon cyan">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="4" width="16" height="16" rx="2"/>
+            <rect x="9" y="9" width="6" height="6"/>
+            <line x1="9" y1="1" x2="9" y2="4"/>
+            <line x1="15" y1="1" x2="15" y2="4"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">แอปที่ตรวจพบ</div>
+          <div class="stat-val" id="stat-total-apps">0</div>
+          <div class="stat-sub">ประวัติในระบบ</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon purple">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">เวลาใช้งานรวม</div>
+          <div class="stat-val" id="stat-total-time">0 ชม.</div>
+          <div class="stat-sub">Screen Time สะสม</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon amber">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+            <line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">โปรแกรมนอก Store</div>
+          <div class="stat-val" id="stat-sideload-count" style="color:var(--accent-amber);">0</div>
+          <div class="stat-sub">APK / IPA Sideloaded</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(239,68,68,0.15); color:var(--accent-rose);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <line x1="10" y1="11" x2="10" y2="17"/>
+            <line x1="14" y1="11" x2="14" y2="17"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">แอปที่ถูกลบไปแล้ว</div>
+          <div class="stat-val" id="stat-deleted-count" style="color:var(--accent-rose);">0</div>
+          <div class="stat-sub">ตรวจพบประวัติค้างอยู่</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab-overview">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        ภาพรวม & ไทม์ไลน์
+      </button>
+
+      <button class="tab-btn" data-tab="tab-apps">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        ตารางรายการแอปทั้งหมด
+      </button>
+
+      <button class="tab-btn" data-tab="tab-deleted-sideload">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        🔥 สแกนแอปที่ลบ & โปรแกรมนอก
+      </button>
+
+      <button class="tab-btn" data-tab="tab-ios">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="5" y="2" width="14" height="20" rx="2"/>
+          <line x1="12" y1="18" x2="12.01" y2="18"/>
+        </svg>
+        🍎 โหมดตรวจสอบ iOS (iPhone)
+      </button>
+
+      <button class="tab-btn" data-tab="tab-import">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        ดึงข้อมูล / คำสั่งสแกน
+      </button>
+    </nav>
+
+    <!-- Tab 1: Overview & Timeline -->
+    <div id="tab-overview" class="tab-pane active">
+      <div class="charts-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span style="color:var(--accent-cyan)">●</span> กราฟช่วงเวลาการเปิดใช้งาน (24 ชั่วโมง)
+            </div>
+            <span style="font-size:0.8rem; color:var(--text-dim);">ความถี่การเปิดแอป</span>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="hourly-canvas"></canvas>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span style="color:var(--accent-purple)">●</span> สัดส่วนหมวดหมู่
+            </div>
+          </div>
+          <div class="chart-canvas-wrap" style="height: 180px;">
+            <canvas id="donut-canvas"></canvas>
+          </div>
+          <div id="category-legend" class="category-pills"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span style="color:var(--accent-emerald)">●</span> ลำดับเวลาการเปิดแอปล่าสุด (Timeline Feed)
+          </div>
+        </div>
+        <div id="timeline-container" class="timeline"></div>
+      </div>
+    </div>
+
+    <!-- Tab 2: All Apps Table -->
+    <div id="tab-apps" class="tab-pane">
+      <div class="filter-bar">
+        <div class="search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="search-input" placeholder="ค้นหาชื่อแอป หรือ Package Name (เช่น line, facebook, chrome)..." oninput="renderAppTable()">
+        </div>
+
+        <div class="filter-actions">
+          <select id="category-filter" class="select-filter" onchange="renderAppTable()">
+            <option value="all">ทุกหมวดหมู่ (All Categories)</option>
+            <option value="cheat">⚠️ โปรแกรมช่วยเล่น (Cheat Tools)</option>
+            <option value="social">โซเชียลมีเดีย</option>
+            <option value="chat">แชท & สื่อสาร</option>
+            <option value="video">วิดีโอ & สตรีมมิ่ง</option>
+            <option value="browser">เว็บเบราว์เซอร์</option>
+            <option value="finance">การเงิน & ธนาคาร</option>
+            <option value="shopping">ช้อปปิ้งออนไลน์</option>
+            <option value="game">เกมส์</option>
+            <option value="system">ระบบ & เครื่องมือ</option>
+          </select>
+
+          <select id="os-filter" class="select-filter" onchange="renderAppTable()">
+            <option value="all">ทุกระบบ (Android & iOS)</option>
+            <option value="android">🤖 Android</option>
+            <option value="ios">🍎 iOS (iPhone)</option>
+          </select>
+
+          <select id="status-filter" class="select-filter" onchange="renderAppTable()">
+            <option value="all">ทุกสถานะ (All Status)</option>
+            <option value="deleted">❌ แอปที่ถูกลบไปแล้ว (Deleted)</option>
+            <option value="sideload">📦 โปรแกรมนอก Store (Sideloaded)</option>
+            <option value="cheat">⚠️ โปรแกรมช่วยเล่น (Cheat)</option>
+            <option value="installed">🟢 ติดตั้งอยู่ในเครื่อง (Installed)</option>
+          </select>
+
+          <select id="sort-filter" class="select-filter" onchange="renderAppTable()">
+            <option value="time">เรียงจาก: เปิดล่าสุด</option>
+            <option value="duration">เรียงจาก: เวลาใช้งานสะสม</option>
+            <option value="launches">เรียงจาก: จำนวนครั้งที่เปิด</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="table-responsive">
+          <table class="app-table">
+            <thead>
+              <tr>
+                <th>แอปพลิเคชัน</th>
+                <th>ระบบ & หมวดหมู่</th>
+                <th>สถานะการติดตั้ง & แหล่งที่มา</th>
+                <th>เปิดใช้งานล่าสุด</th>
+                <th>ระยะเวลาใช้งาน</th>
+                <th>ความถี่</th>
+              </tr>
+            </thead>
+            <tbody id="app-table-body">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Deleted & Sideloaded Inspector -->
+    <div id="tab-deleted-sideload" class="tab-pane">
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:20px; margin-bottom:24px;">
+        
+        <!-- Deleted Apps Panel -->
+        <div class="panel" style="border-left: 4px solid var(--accent-rose);">
+          <div class="panel-header">
+            <div class="panel-title" style="color:#fff;">
+              <span style="color:var(--accent-rose)">●</span> แอปที่ถูกลบไปแล้ว (ตรวจพบประวัติค้างอยู่)
+            </div>
+            <span class="badge badge-deleted" id="badge-deleted-total">0 รายการ</span>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">
+            รายการแอปที่ถูกถอนการติดตั้งแล้ว แต่ตรวจพบหลักฐานในบันทึก Package Manager, Usage History หรือ Cloud Activity
+          </p>
+          <div id="deleted-apps-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+
+        <!-- Sideloaded Apps Panel -->
+        <div class="panel" style="border-left: 4px solid var(--accent-amber);">
+          <div class="panel-header">
+            <div class="panel-title" style="color:#fff;">
+              <span style="color:var(--accent-amber)">●</span> โปรแกรมนอก Store (Sideloaded APK / IPA)
+            </div>
+            <span class="badge badge-sideload" id="badge-sideload-total">0 รายการ</span>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">
+            แอปที่ไม่ได้ติดตั้งผ่าน Google Play Store หรือ Apple App Store (ติดตั้งผ่านไฟล์ภายนอก, เบราว์เซอร์ หรือ Enterprise Certificate)
+          </p>
+          <div id="sideloaded-apps-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Tab 4: iOS Deep Inspector -->
+    <div id="tab-ios" class="tab-pane">
+      <div class="panel" style="margin-bottom:24px; border: 1px solid rgba(168, 85, 247, 0.4); background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%);">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:16px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(168,85,247,0.2); display:flex; align-items:center; justify-content:center; color:#d8b4fe; font-size:1.4rem;">
+              🍎
+            </div>
+            <div>
+              <h2 style="font-size:1.25rem; font-weight:700; color:#fff;">เครื่องมือตรวจสอบ iOS (iPhone & iPad Forensic Audit)</h2>
+              <p style="font-size:0.85rem; color:var(--text-muted);">เทคนิคการตรวจสอบโปรแกรมนอก, ใบรับรององค์กร และประวัติแอปที่ถูกลบไปแล้วบนระบบ iOS</p>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="simulateIosThreatTest()">
+            จำลองตรวจพบโปรแกรมนอก & ช่วยเล่นบน iOS
+          </button>
+        </div>
+      </div>
+
+      <div class="guide-cards">
+        <div class="guide-card">
+          <h3>
+            <span style="color:#d8b4fe;">1.</span> ตรวจเช็กโปรไฟล์และใบรับรององค์กร (Profiles & Certificates)
+          </h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
+            โปรแกรมนอก/ม็อดบน iOS (เช่น Scarlet, AltStore, PandaHelper หรือไฟล์ IPA โกงเกม) <strong>ต้องใช้ Profile หรือ Enterprise Certificate เสมอ</strong>
+          </p>
+          <div class="code-box" style="color:#d8b4fe;">
+            <span>การตั้งค่า > ทั่วไป > VPN และการจัดการอุปกรณ์</span>
+          </div>
+          <p style="font-size:0.82rem; color:#cbd5e1; line-height:1.6;">
+            ⚠️ หากมีรายการ <em>"แอปองค์กร" (Enterprise App)</em> หรือ <em>"โปรไฟล์การกำหนดค่า"</em> ที่ไม่ใช่ของโรงเรียนหรือบริษัท แปลว่าเครื่องนั้นติดตั้งโปรแกรมนอกแน่นอน
+          </p>
+        </div>
+
+        <div class="guide-card">
+          <h3>
+            <span style="color:#d8b4fe;">2.</span> ดูประวัติแอปที่เคยดาวน์โหลดทั้งหมด (แม้จะลบไปแล้ว)
+          </h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
+            Apple บันทึกทุกแอปที่ Apple ID เคยสั่งดาวน์โหลด แม้จะลบออกจากหน้าจอไปแล้ว:
+          </p>
+          <div class="code-box" style="color:#d8b4fe;">
+            <span>App Store > รูปโปรไฟล์ > สินค้าที่ซื้อแล้ว > ไม่ได้อยู่ใน iPhone นี้</span>
+          </div>
+          <p style="font-size:0.82rem; color:#cbd5e1; line-height:1.6;">
+            💡 สามารถค้นหาชื่อแอปย้อนหลังได้ทั้งหมด หากเคยโหลดมาจะขึ้นไอคอนก้อนเมฆ (Cloud Download)
+          </p>
+        </div>
+
+        <div class="guide-card">
+          <h3>
+            <span style="color:#d8b4fe;">3.</span> ตรวจสอบผ่าน iOS Sysdiagnose & Backup Manifest
+          </h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
+            ดึงไฟล์ Log วินิจฉัยของ iOS เพื่อดู Bundle ID และประวัติ Crash/การติดตั้ง:
+          </p>
+          <p style="font-size:0.82rem; color:var(--text-dim); line-height:1.6; margin-bottom:12px;">
+            กด <strong>ปุ่มเพิ่มเสียง + ปุ่มลดเสียง + ปุ่มเปิด/ปิดเครื่อง พร้อมกัน 1 วินาที</strong> เพื่อสร้างไฟล์ Sysdiagnose หรือต่อคอมดึงข้อมูลผ่าน iTunes Backup
+          </p>
+          <button class="btn btn-outline" style="margin-top:auto;" onclick="switchTab('tab-import')">
+            ไปที่หน้าต่างนำเข้าไฟล์ Log
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 5: Import & Connect Guides -->
+    <div id="tab-import" class="tab-pane">
+      <div class="guide-cards">
+        
+        <!-- Method 1: ADB Dumpsys -->
+        <div class="guide-card">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent-cyan)">
+              <polyline points="4 17 10 11 4 5"/>
+              <line x1="12" y1="19" x2="20" y2="19"/>
+            </svg>
+            วิธีที่ 1: วาง Log จาก ADB
+          </h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;">
+            เสียบสายมือถือเข้ากับคอม แล้วเปิด Terminal/PowerShell เลือกคัดลอกคำสั่งด้านล่างเพื่อดึงข้อมูลเชิงลึก:
+          </p>
+          <div class="code-box">
+            <span>adb shell pm list packages -u</span>
+            <button class="copy-btn" onclick="copyAdbCommand('adb shell pm list packages -u')">แอปทั้งหมดรวมที่ลบแล้ว</button>
+          </div>
+          <div class="code-box">
+            <span>adb shell pm list packages -i</span>
+            <button class="copy-btn" onclick="copyAdbCommand('adb shell pm list packages -i')">ตรวจโปรแกรมนอก</button>
+          </div>
+          <div class="code-box">
+            <span>adb shell dumpsys usagestats</span>
+            <button class="copy-btn" onclick="copyAdbCommand('adb shell dumpsys usagestats')">ประวัติเวลาที่เปิด</button>
+          </div>
+          <textarea id="raw-log-input" class="textarea-import" placeholder="นำข้อความผลลัพธ์จากคำสั่งข้างต้น หรือผลสแกนมาวางที่นี่..."></textarea>
+          <button class="btn btn-primary" onclick="parseLogContent(document.getElementById('raw-log-input').value)">
+            วิเคราะห์ Log ทันที
+          </button>
+        </div>
+
+        <!-- Method 2: File Upload / Google Takeout -->
+        <div class="guide-card">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent-emerald)">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            วิธีที่ 2: อัปโหลดไฟล์ประวัติ
+          </h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
+            รองรับไฟล์ Text, JSON หรือรายงานจาก Google My Activity / Takeout
+          </p>
+          <input type="file" id="file-input" style="display:none;" accept=".txt,.json,.log,.csv">
+          <div id="drop-zone" class="drag-drop-zone">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-dim); margin-bottom:8px;">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <line x1="9" y1="15" x2="12" y2="12"/>
+              <line x1="15" y1="15" x2="12" y2="12"/>
+            </svg>
+            <div style="font-weight:600; color:#fff; font-size:0.95rem;">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</div>
+            <div style="font-size:0.8rem; color:var(--text-dim); margin-top:4px;">รองรับไฟล์ .txt, .json, .log, .csv</div>
+          </div>
+          <button class="btn btn-outline" onclick="loadSampleData()">
+            ใช้ข้อมูลจำลองสาธิต
+          </button>
+        </div>
+
+        <!-- Method 3: Direct WebUSB / Device Guide -->
+        <div class="guide-card">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent-purple)">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            วิธีที่ 3: ตรวจสอบบนมือถือโดยตรง
+          </h3>
+          <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.7;">
+            <p><strong>📱 บน Android:</strong></p>
+            <ul style="padding-left:18px; margin-bottom:10px;">
+              <li>เข้า <strong>การตั้งค่า (Settings)</strong> &gt; <strong>ความเป็นอยู่ที่ดีทางดิจิทัล (Digital Wellbeing)</strong></li>
+              <li>หรือกดรหัสทดสอบในแป้นโทรศัพท์: <code style="color:var(--accent-cyan)">*#*#4636#*#*</code> แล้วเลือก <em>Usage statistics</em></li>
+            </ul>
+            <p><strong>🍎 บน iPhone:</strong></p>
+            <ul style="padding-left:18px; margin-bottom:12px;">
+              <li>เข้า <strong>การตั้งค่า (Settings)</strong> &gt; <strong>เวลาหน้าจอ (Screen Time)</strong> &gt; <strong>ดูกิจกรรมทั้งหมด</strong></li>
+            </ul>
+          </div>
+          <button class="btn btn-outline" style="margin-top:auto;" onclick="requestUsbDevice()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+              <line x1="6" y1="6" x2="6.01" y2="6"/>
+              <line x1="6" y1="18" x2="6.01" y2="18"/>
+            </svg>
+            เชื่อมต่อ Android ผ่านสาย WebUSB
+          </button>
+        </div>
+
+        <!-- Method 4: Cheat Website Scanner -->
+        <div class="guide-card" style="border: 1px solid rgba(244, 63, 94, 0.4); background: rgba(244, 63, 94, 0.05);">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent-rose)">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            ระบบตรวจจับเว็บโปรแกรมช่วยเล่น
+          </h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;">
+            ระบบตรวจจับอัตโนมัติหากพบประวัติการเข้าถึงเว็บไซต์โปรแกรมช่วยเล่น/โกงเกม:
+          </p>
+          <div class="code-box" style="border-color: rgba(244, 63, 94, 0.3); color:#fda4af;">
+            <span>https://ph4nt0m.lol/</span>
+            <button class="copy-btn" onclick="copyAdbCommand('https://ph4nt0m.lol/')">คัดลอก</button>
+          </div>
+          <div style="font-size:0.82rem; color:#fecdd3; margin-bottom:12px;">
+            💡 หากมีการนำเข้าประวัติ Log เบราว์เซอร์ หรือพบโดเมนนี้ในเครื่อง ระบบจะเด้งแบนเนอร์แจ้งเตือนสีแดงทันที
+          </div>
+          <button class="btn btn-danger" style="margin-top:auto;" onclick="triggerCheatTest()">
+            ทดสอบสแกนตรวจพบ ph4nt0m.lol
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <p>Mobile App Usage Inspector &bull; ออกแบบเพื่อวิเคราะห์ประวัติการเปิดใช้งานแอปพลิเคชันอย่างเป็นส่วนตัวและปลอดภัยบนเครื่องของคุณ</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
